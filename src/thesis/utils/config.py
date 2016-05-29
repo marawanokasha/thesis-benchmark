@@ -16,11 +16,11 @@ def get_app_config():
     return AppConfig(
         # stem function
         # stem = nltk.stem.lancaster.LancasterStemmer().stem
-        # stem = nltk.stem.porter.PorterStemmer().stem
-        stem=nltk.stem.snowball.EnglishStemmer().stem,
-        lemmatize=nltk.stem.wordnet.WordNetLemmatizer().lemmatize,
+        stem = nltk.stem.porter.PorterStemmer().stem,
+        # stem=nltk.stem.snowball.EnglishStemmer().stem,
+        lemmatize=nltk.stem.wordnet.WordNetLemmatizer().lemmatize
         # Model config
-        kfold=10
+        # kfold=10
     )
 
 

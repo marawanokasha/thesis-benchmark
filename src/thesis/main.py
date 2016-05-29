@@ -1,7 +1,7 @@
 import json
 from thesis.utils.config import config, app_config
 from thesis.utils.patent import get_patents, PatentIterable
-from thesis.preprocessing.tf_idf import create_bag_of_words, create_tf_idf
+from preprocessing.tf_idf import create_bag_of_words, create_tf_idf
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 
