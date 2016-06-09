@@ -7,7 +7,7 @@ import time
 
 from pyspark.mllib.regression import LabeledPoint
 from pyspark.mllib.linalg import SparseVector
-from pyspark.mllib.classification import SVMWithSGD
+from pyspark.mllib.classification import SVMWithSGD, SVMModel
 
 
 STOP_WORDS = nltk.corpus.stopwords.words('english')
@@ -242,9 +242,12 @@ def train_all(docs_with_classes):
 #sc = SparkContext("", "Generate Inverted Index Job")
 save_parent_location = "hdfs://192.168.0.103/svm/"
 file_name = "sample.json"
+test_file_name = "sample.json"
 #url = "/media/Work/workspace/thesis/benchmark/output/" + file_name
 sample_location = save_parent_location + file_name
-postings_list_output = save_parent_location + "postings_list_50000.csv"
+sample_test_location = save_parent_location + test_file_name
+postings_list_output = save_parent_location + "postings_list_50000.json"
+test_postings_list_output = save_parent_location + "test_postings_list_50000.json"
 training_errors_output = save_parent_location + "training_errors.json"
 model_output = save_parent_location + "models/" + "iter_" + str(SVM_ITERATIONS) + "_reg_" + str(SVM_REG) + "/"
 
@@ -282,7 +285,8 @@ min_doc_postings_lists = postings_lists.filter(lambda (x,y): len(y) > MIN_DOCUME
 number_of_terms = min_doc_postings_lists.count()
 
 # Save Postings List
-min_doc_postings_lists.map(lambda (term, postings_list): ",".join([term, json.dumps(postings_list)])).repartition(1).saveAsTextFile(postings_list_output)
+# min_doc_postings_lists.map(lambda (term, postings_list): ",".join([term, json.dumps(postings_list)])).repartition(1).saveAsTextFile(postings_list_output)
+min_doc_postings_lists.map(lambda postings: json.dumps(postings)).repartition(1).saveAsTextFile(postings_list_output)
 
 all_terms = min_doc_postings_lists.keys().collect()
 
@@ -305,7 +309,13 @@ bm25_doc_index = create_doc_index(bm25_postings, term_dictionary)
 
 training_errors = {}
 
+VIABLE_CLASSES = {u'D-05': 26, u'D-04': 79, u'D-06': 113, u'D-01': 96, u'D-03': 69, u'D-02': 51, u'A-21': 13, u'A-23': 215, u'C-01': 476, u'C-02': 149, u'C-03': 138, u'C-04': 19, u'C-06': 11, u'C-07': 4197, u'C-08': 1292, u'C-09': 721, u'G-11': 943, u'G-10': 308, u'D': 463, u'H': 13422, u'B-60': 700, u'B-62': 225, u'B-65': 615, u'B-64': 19, u'B-66': 12, u'C-12': 2549, u'C-11': 47, u'C-10': 188, u'F-41': 96, u'H-01': 3943, u'H-03': 1098, u'H-02': 881, u'H-05': 1013, u'H-04': 6764, u'H-06': 17, u'A-01': 1862, u'C-25': 45, u'C-22': 16, u'C-23': 445, u'C-21': 11, u'E-06': 99, u'E-04': 297, u'E-05': 182, u'E-02': 98, u'E-03': 61, u'E-01': 116, u'C': 8965, u'G': 15452, u'B-82': 15, u'B-05': 688, u'G-21': 19, u'B-03': 15, u'B-01': 1186, u'C-30': 12, u'B-08': 153, u'A-61': 5176, u'A-62': 136, u'A-63': 400, u'F-16': 874, u'B-32': 628, u'B': 5412, u'F': 2843, u'F-03': 143, u'F-02': 510, u'F-01': 490, u'F-04': 187, u'B-29': 489, u'B-28': 19, u'B-25': 18, u'B-21': 30, u'B-23': 536, u'B-22': 20, u'D-21': 96, u'A-47': 504, u'A-45': 14, u'A-41': 12, u'A': 8103, u'E': 1076, u'E-21': 267, u'F-28': 57, u'F-21': 316, u'F-23': 113, u'F-25': 154, u'F-24': 53, u'B-41': 430, u'B-44': 19, u'G-08': 661, u'G-09': 785, u'G-04': 312, u'G-05': 780, u'G-06': 7781, u'G-07': 44, u'G-01': 2599, u'G-02': 1064, u'G-03': 996}
+
+i=0
 for classification in classifications:
+    i+=1
+    if i<= 84: continue
+    if classification not in VIABLE_CLASSES.keys(): continue
     training_errors[classification] = {}
     representations_to_test = [("tf", tf_doc_index), ("tf-idf", tf_id_doc_index), ("bm25", bm25_doc_index)]
     #
@@ -337,6 +347,119 @@ for classification in classifications:
     svm.save(sc, model_output + "tf_rf_" + classification + "_model.svm")
     train_err = get_error(svm, training_vectors)
     training_errors[classification]["tf-rf"] = train_err
+
+
+
+
+
+
+
+test_data = sc.textFile(sample_test_location)
+
+test_doc_count = test_data.count()
+
+test_doc_objs = test_data.map(lambda x: json.loads(x))
+
+test_doc_class_map = test_doc_objs.map(lambda x: (x['id'], get_classes(x['classification-ipc'])))
+test_doc_classification_map = test_doc_class_map.map(lambda (doc_id, classification_obj): (doc_id, sorted(reduce(lambda x, lst: x + lst, classification_obj.values(), [])))).collectAsMap()
+
+# contains [(classification,  list of docs)]
+# second list comprehension is to get list of lists [["A", "B"],["A-01","B-03"]] to one list ["A", "B", "A-01","B-03"], we could have also used a reduce as in doc_classifications_map
+test_classifications_index = test_doc_class_map.flatMap(lambda (doc_id, classifications_obj): [(classification, doc_id) for classification in [classif for cat in classifications_obj.values() for classif in cat]])\
+    .groupByKey().map(lambda (classf, classf_docs): (classf, list(classf_docs))).collectAsMap()
+
+test_classifications = sorted(test_classifications_index.keys(), cmp=compare_classifications)
+
+# Create Postings List
+test_postings_lists = test_doc_objs.flatMap(lambda x: stemtokenizer(x['description'], x['id'])).reduceByKey(lambda x,y: merge_postings(x,y)).filter(lambda (term, postings): term in term_dictionary)
+
+# Save Postings List
+# min_doc_postings_lists.map(lambda (term, postings_list): ",".join([term, json.dumps(postings_list)])).repartition(1).saveAsTextFile(postings_list_output)
+test_postings_lists.map(lambda postings: json.dumps(postings)).repartition(1).saveAsTextFile(test_postings_list_output)
+
+test_tf_postings = test_postings_lists
+test_tf_doc_index = create_doc_index(test_tf_postings, term_dictionary)
+
+test_tf_idf_postings = tf_postings.mapValues(lambda postings: {docId:  calculate_tf_idf(tf, len(postings), doc_count) for docId, tf in postings.items()})
+test_tf_id_doc_index = create_doc_index(test_tf_postings, term_dictionary)
+
+# need to collect the document lengths since they are used in the BM25 calculation
+test_doc_lengths_rdd = test_tf_doc_index.mapValues(lambda term_dictionary: reduce(lambda x, term: x + term_dictionary[term], term_dictionary, 0))
+test_avg_doc_length = test_doc_lengths_rdd.map(lambda (term, count): count).reduce(lambda count1, count2: count1 + count2) / doc_count
+test_doc_lengths_dict = test_doc_lengths_rdd.collectAsMap()
+
+test_bm25_postings = test_tf_postings.mapValues(lambda postings: {docId: calculate_bm25(tf, len(postings), doc_count, test_doc_lengths_dict[docId], avg_doc_length) for docId, tf in postings.items()})
+test_bm25_doc_index = create_doc_index(test_bm25_postings, term_dictionary)
+
+
+class ContingencyTable:
+    def __init__(self, tp, fp, fn, tn):
+        self.tp = tp
+        self.fp = fp
+        self.fn = fn
+        self.tn = tn
+        self.count = tp + fp + fn + tn
+
+
+methods = ["tf", "tf-idf", "bm25", "rf", "tf_rf"]
+
+contingency_tables = {"tf":{},"tf-idf":{},"bm25":{},"rf":{},"tf-rf":{}}
+
+def get_contingency_table(binarySvm, doc_index, clssf):
+    test_docs_with_classes = doc_index.map(
+        lambda (doc_id, terms): (doc_id, (terms, test_doc_classification_map[doc_id])))
+    test_vectors = test_docs_with_classes.map(
+        lambda (doc_id, (term_list, classifications)): get_training_vector(clssf, term_list,
+                                                                           classifications, number_of_terms))
+    labelsAndPreds = test_vectors.map(lambda p: (p.label, binarySvm.predict(p.features)))
+    tp = labelsAndPreds.filter(lambda (t, p): t == 1 and p == 1).count()
+    fp = labelsAndPreds.filter(lambda (t, p): t == 0 and p == 1).count()
+    fn = labelsAndPreds.filter(lambda (t, p): t == 1 and p == 0).count()
+    tn = labelsAndPreds.filter(lambda (t, p): t == 0 and p == 0).count()
+    ct = ContingencyTable(tp, fp, fn, tn)
+    return ct
+
+
+for section in sections:
+    # binarySvm = SVMModel.load(sc, model_output + "tf" + "_" + section + "_model.svm")
+    # if section != "A":
+    #     ct = get_contingency_table(binarySvm, test_tf_doc_index, section)
+    #     contingency_tables["tf"][section] = ct
+    #     ct = get_contingency_table(binarySvm, test_tf_id_doc_index, section)
+    #     contingency_tables["tf-idf"][section] = ct
+    #     ct = get_contingency_table(binarySvm, test_bm25_doc_index, section)
+    #     contingency_tables["bm25"][section] = ct
+
+    test_rf_postings = test_tf_postings.mapValues(get_rf_postings)
+    test_rf_doc_index = create_doc_index(test_rf_postings, term_dictionary)
+    ct = get_contingency_table(binarySvm, test_rf_doc_index, section)
+    contingency_tables["rf"][section] = ct
+
+    test_tf_rf_postings = test_tf_postings.mapValues(get_tf_rf_postings)
+    test_tf_rf_doc_index = create_doc_index(test_tf_rf_postings, term_dictionary)
+    ct = get_contingency_table(binarySvm, test_tf_rf_doc_index, section)
+    contingency_tables["tf-rf"][section] = ct
+import cPickle as pickle
+pickle.d
+for clss in classes:
+    binarySvm = SVMModel.load(sc, model_output + "tf" + "_" + clss + "_model.svm")
+
+    ct = get_contingency_table(binarySvm, test_tf_doc_index, clss)
+    contingency_tables["tf"][clss] = ct
+    ct = get_contingency_table(binarySvm, test_tf_id_doc_index, clss)
+    contingency_tables["tf-idf"][clss] = ct
+    ct = get_contingency_table(binarySvm, test_bm25_doc_index, clss)
+    contingency_tables["bm25"][clss] = ct
+
+    test_rf_postings = test_tf_postings.mapValues(get_rf_postings)
+    test_rf_doc_index = create_doc_index(test_rf_postings, term_dictionary)
+    ct = get_contingency_table(binarySvm, test_rf_doc_index, clss)
+    contingency_tables["rf"][clss] = ct
+
+    test_tf_rf_postings = test_tf_postings.mapValues(get_tf_rf_postings)
+    test_tf_rf_doc_index = create_doc_index(test_tf_rf_postings, term_dictionary)
+    ct = get_contingency_table(binarySvm, test_tf_rf_doc_index, clss)
+    contingency_tables["tf-rf"][clss] = ct
 
 
 # for name, doc_index in representations_to_test:
