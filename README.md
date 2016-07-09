@@ -56,9 +56,21 @@ You can setup your spark configuration by editing `conf/spark-env.sh` for exampl
     export PYSPARK_PYTHON=/home/marawan/.virtualenv/thesis-env/bin/python
     export PYSPARK_DRIVER_PYTHON=/home/marawan/.virtualenv/thesis-env/bin/python
 
-and `conf/spark-defaults.conf` to configure the worker memory:
+and `conf/spark-defaults.conf` to configure the worker memory and temp directory (important if /tmp has disc restrictions, otherwise jobs fail randomly with an obscure java server error):
 
     spark.executor.memory   20g
+    spark.driver.memory 8g
+    # important when calculating chi due to the large amount of data sent to the driver
+    spark.driver.maxResultSize 4g
+    # Enabling applications to share resources
+    spark.dynamicAllocation.enabled true
+    spark.shuffle.service.enabled true
+    # set path for temp files created during task execution
+    spark.local.dir /big/s/shalaby/tmp
+    # for accessing elasticsearch from spark
+    spark.driver.extraClassPath     /home/s/shalaby/lib/elasticsearch-spark_2.10-2.3.2.jar
+    spark.executor.extraClassPath   /home/s/shalaby/lib/elasticsearch-spark_2.10-2.3.2.jar
+
 
 you can then run the spark master using:
 
@@ -97,7 +109,7 @@ You may need to change the py4j-0.x and Spark 1.x depending on your version
 
 then in ~/.bashrc add:
 
-    export PYSPARK_SUBMIT_ARGS='--master spark://131.159.195.118:7077 pyspark-shell'
+    export PYSPARK_SUBMIT_ARGS='--master spark://deka.cip.ifi.lmu.de:7077 pyspark-shell'
     
 *pyspark-shell* must be there for the correct functioning of pyspark within ipython
 
@@ -192,7 +204,7 @@ then in **etc/hadoop/slaves**:
     hekto.cip.ifi.lmu.de
     deka.cip.ifi.lmu.de
 
-The to setup:
+Then to setup:
 
     bin/hdfs namenode -format
     sbin/start-dfs.sh
