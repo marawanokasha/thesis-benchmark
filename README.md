@@ -2,7 +2,7 @@
 
 #### First for Scipy:
 
-	sudo apt-get install build-essential gfortran libatlas-base-dev
+	sudo apt-get install build-essential gfortran libatlas-base-dev libfreetype6-dev
 	
 #### For the General Requirements:
 
@@ -16,13 +16,29 @@ Then add those two lines there:
 	export WORKON_HOME=$HOME/.virtualenv
 	source /usr/local/bin/virtualenvwrapper.sh
 
+Or if you get Permission denied errors:
+
+	pip install --user virtualenv virtualenvwrapper
+
+Then add those two lines there:
+
+	export WORKON_HOME=$HOME/.virtualenv
+	source /home/stud/shalaby/.local/bin/virtualenvwrapper.sh
+	# for being able to run jupyter from the command line
+	export PATH=$PATH:/home/stud/shalaby/.local/bin
+
 Then:
 
 	source ~/.bashrc
 	mkvirtualenv thesis-env
 	workon thesis-env
 	pip install -r requirements.txt
+
+Or if you installed the virtualenv locally:
+
+	pip install --user -r requirements.txt
 	
+
 #### For NLTK:
 
 Do 
@@ -79,7 +95,7 @@ you can then run the spark master using:
 and then the slaves can be run using:
 
     sbin/start-slave.sh spark://deka.cip.ifi.lmu.de:7077
-    
+   
 #### For Ipython
 
     ipython profile create pyspark
@@ -121,8 +137,8 @@ to work in the console
 
 To work in jupyter notebook, you need to create a file: 
 
-    mkdir -p .ipython/kernels/pyspark/
-    vim .ipython/kernels/pyspark/kernel.json
+    mkdir -p ~/.ipython/kernels/pyspark/
+    vim ~/.ipython/kernels/pyspark/kernel.json
     
 and add the following:
 
@@ -155,11 +171,15 @@ Download hadoop, then add to .bashrc:
 and source it, then in **etc/hadoop/core-site.xml**:
     
     <configuration>
-         <property>
-                 <!-- this determines the primary node -->
-                 <name>fs.defaultFS</name>
-                 <value>hdfs://deka.cip.ifi.lmu.de:8020/</value>
-         </property>
+        <property>
+            <!-- this determines the primary node -->
+            <name>fs.defaultFS</name>
+            <value>hdfs://deka.cip.ifi.lmu.de:8020/</value>
+        </property>
+        <property>
+             <name>hadoop.tmp.dir</name>
+             <value>/big/s/shalaby/tmp-hadoop</value>
+        </property>
     </configuration>
 
 
@@ -228,10 +248,19 @@ You can also set the Xmx and Xms flags by adding this to `.bashrc`:
 
     export ES_HEAP_SIZE=2g
 
+
+### OPTICS
+
+    java -jar elki-bundle-0.7.1.jar KDDCLIApplication -dbc.in /home/local/shalaby/bm25_training_sample_0.008_dense.csv -algorithm clustering.optics.OPTICSList -optics.minpts 3 -verbose -resulthandler ExportVisualizations,ResultWriter -vis.output /home/local/shalaby/optics-0.008-vis -out /home/local/shalaby/optics-0.008-text
+    
 ### SOCKS Proxy
 
 Setup a socks proxy using:
 
     ssh -D 1024 lmu-remote
+
+Or using autossh to guarantee a continuous connection:
+
+    autossh -ND localhost:1024 lmu-remote &
 
 Then use FoxyProxy add-on for firefox to use this socks proxy to access GUI websites like ipython
