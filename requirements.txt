@@ -1,10 +1,15 @@
 nltk == 3.2
-numpy == 1.10.4
-scipy == 0.17.0
-scikit-learn == 0.17.1
+numpy == 1.11.4
+scipy == 0.18.1
+scikit-learn == 0.18.1
 pandas == 0.18.1
 matplotlib == 1.5.1
 gensim == 0.13.1
 
 ipython == 4.2.0
-jupyter
+jupyter == 1.0.0
+
+Theano == 0.8.2
+keras == 1.1.2
+
+# word2veckeras

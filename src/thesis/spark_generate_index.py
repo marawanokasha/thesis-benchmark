@@ -282,11 +282,11 @@ min_doc_postings_lists = postings_lists.filter(lambda (x,y): len(y) > MIN_DOCUME
 # Load Postings Lists
 # min_doc_postings_lists = sc.textFile(postings_list_output).map(lambda x: x.split(",", 1)).mapValues(lambda json_postings: json.loads(json_postings))
 
-number_of_terms = min_doc_postings_lists.count()
-
 # Save Postings List
 # min_doc_postings_lists.map(lambda (term, postings_list): ",".join([term, json.dumps(postings_list)])).repartition(1).saveAsTextFile(postings_list_output)
 min_doc_postings_lists.map(lambda postings: json.dumps(postings)).repartition(1).saveAsTextFile(postings_list_output)
+
+number_of_terms = min_doc_postings_lists.count()
 
 all_terms = min_doc_postings_lists.keys().collect()
 
@@ -440,7 +440,7 @@ for section in sections:
     ct = get_contingency_table(binarySvm, test_tf_rf_doc_index, section)
     contingency_tables["tf-rf"][section] = ct
 import cPickle as pickle
-pickle.d
+
 for clss in classes:
     binarySvm = SVMModel.load(sc, model_output + "tf" + "_" + clss + "_model.svm")
 

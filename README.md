@@ -57,6 +57,12 @@ Open ~/.bashrc and add
 	
 	export SPARK_HOME={wherever you put your spark}
 	
+	# bash function wrapping python script to set python server
+    set_spark_server(){
+            python ~/thesis/thesis-benchmark/src/thesis/set_spark_server.py --server $1
+    }
+
+	
 then
 
     cp $SPARK_HOME/conf/spark-env.sh.template $SPARK_HOME/conf/spark-env.sh
@@ -161,6 +167,21 @@ then you can just run
     jupyter notebook  --ip=0.0.0.0
     
 to make it listen to all associated ips and not just localhost. When creating a new notebook, choose the one with the type pySpark.
+
+
+#### Theano
+
+To get theano to work in ipython, add this to `.bashrc`:
+
+    export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
+    
+or else you'll get `Cuda is unavailable` errors. You should also add `/usr/local/cuda-8.0/bin` to `$PATH`, but that's already taken care of on yell
+
+
+#### TensorFlow
+
+    export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-0.12.0rc0-cp27-none-linux_x86_64.whl
+    pip install --upgrade $TF_BINARY_URL
 
 #### Hadoop
 
