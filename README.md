@@ -20,7 +20,7 @@ Or if you get Permission denied errors:
 
 	pip install --user virtualenv virtualenvwrapper
 
-Then add those two lines there:
+Then add those lines in `~/.bashrc`:
 
 	export WORKON_HOME=$HOME/.virtualenv
 	source /home/stud/shalaby/.local/bin/virtualenvwrapper.sh
@@ -34,10 +34,13 @@ Then:
 	workon thesis-env
 	pip install -r requirements.txt
 
-Or if you installed the virtualenv locally:
+Or if you installed the virtualenv locally (doesnt seem to be needed anymore on vivara):
 
 	pip install --user -r requirements.txt
 	
+For vivara, when creating the virtualenv, you may need to specify the python version as the default one is 3.4:
+    
+    mkvirtualenv thesis-env2 -p /usr/bin/python2.7
 
 #### For NLTK:
 
@@ -285,3 +288,7 @@ Or using autossh to guarantee a continuous connection:
     autossh -ND localhost:1024 lmu-remote &
 
 Then use FoxyProxy add-on for firefox to use this socks proxy to access GUI websites like ipython
+
+### For making virtual envs for a spcific python version
+
+    mkvirtualenv thesis-env2 -p /usr/bin/python2.7

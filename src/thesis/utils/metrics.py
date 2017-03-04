@@ -47,10 +47,10 @@ def get_metrics(y_true, y_score, y_binary_score):
     #metrics['y_true'] = y_true
     #metrics['y_score'] = y_score
     #metrics['y_binary_score'] = y_binary_score
-    metrics['coverage_error'] = coverage_error(y_true, y_binary_score)
+    metrics['coverage_error'] = coverage_error(y_true, y_score)
     metrics['average_num_of_labels'] = round(float(np.sum(np.sum(y_true, axis=1)))/y_true.shape[0], 2)
-    metrics['average_precision_micro'] = sklearn.metrics.average_precision_score(y_true, y_binary_score, average='micro')
-    metrics['average_precision_macro'] = sklearn.metrics.average_precision_score(y_true, y_binary_score, average='macro')
+    #metrics['average_precision_micro'] = sklearn.metrics.average_precision_score(y_true, y_binary_score, average='micro')
+    #metrics['average_precision_macro'] = sklearn.metrics.average_precision_score(y_true, y_binary_score, average='macro')
     metrics['precision_micro'] = sklearn.metrics.precision_score(y_true, y_binary_score, average='micro')
     metrics['precision_macro'] = sklearn.metrics.precision_score(y_true, y_binary_score, average='macro')
     metrics['recall_micro'] = sklearn.metrics.recall_score(y_true, y_binary_score, average='micro')
@@ -58,20 +58,22 @@ def get_metrics(y_true, y_score, y_binary_score):
     metrics['f1_micro'] = sklearn.metrics.f1_score(y_true, y_binary_score, average='micro')
     metrics['f1_macro'] = sklearn.metrics.f1_score(y_true, y_binary_score, average='macro')
 
-    precision_scores = np.zeros(y_true.shape[1])
-    for i in range(0, y_true.shape[1]):
-        precision_scores[i] = sklearn.metrics.precision_score(y_true[:,i], y_binary_score[:,i])
-    metrics['precision_scores_array'] = precision_scores.tolist()
+    # only calculate those for cases with a small number of labels (sections only)
+    if y_true.shape[1] < 100:
+        precision_scores = np.zeros(y_true.shape[1])
+        for i in range(0, y_true.shape[1]):
+            precision_scores[i] = sklearn.metrics.precision_score(y_true[:,i], y_binary_score[:,i])
+        metrics['precision_scores_array'] = precision_scores.tolist()
 
-    recall_scores = np.zeros(y_true.shape[1])
-    for i in range(0, y_true.shape[1]):
-        recall_scores[i] = sklearn.metrics.recall_score(y_true[:,i], y_binary_score[:,i])
-    metrics['recall_scores_array'] = recall_scores.tolist()
+        recall_scores = np.zeros(y_true.shape[1])
+        for i in range(0, y_true.shape[1]):
+            recall_scores[i] = sklearn.metrics.recall_score(y_true[:,i], y_binary_score[:,i])
+        metrics['recall_scores_array'] = recall_scores.tolist()
 
-    f1_scores = np.zeros(y_true.shape[1])
-    for i in range(0, y_true.shape[1]):
-        f1_scores[i] = sklearn.metrics.f1_score(y_true[:,i], y_binary_score[:,i])
-    metrics['f1_scores_array'] = f1_scores.tolist()
+        f1_scores = np.zeros(y_true.shape[1])
+        for i in range(0, y_true.shape[1]):
+            f1_scores[i] = sklearn.metrics.f1_score(y_true[:,i], y_binary_score[:,i])
+        metrics['f1_scores_array'] = f1_scores.tolist()
 
     metrics['top_1'] = get_top_N_percentage(y_score, y_true, max_N=1)
     metrics['top_3'] = get_top_N_percentage(y_score, y_true, max_N=3)

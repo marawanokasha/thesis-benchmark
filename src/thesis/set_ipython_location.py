@@ -5,7 +5,7 @@ from subprocess import call
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Set Spark Server master')
+    parser = argparse.ArgumentParser(description='Set ipython location')
     parser.add_argument("--bashrcFile", default="/home/stud/shalaby/.bashrc")
     parser.add_argument("--server", choices=["vivara","yell"])
     args = parser.parse_args()
