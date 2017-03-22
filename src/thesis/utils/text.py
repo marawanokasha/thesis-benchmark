@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import string
 import nltk
 from nltk.tokenize import RegexpTokenizer
@@ -6,7 +8,7 @@ import re
 NUMBER_INDICATOR = "num_indic"
 CURRENCY_INDICATOR = "curr_indic"
 CHEMICAL_INDICATOR = "chem_indic"
-MIN_SIZE = 0
+MIN_SIZE = 1
 
 MIN_SENT_LENGTH = 50
 MAX_NON_TABLE_ROW_LENGTH = 100
@@ -51,7 +53,9 @@ def stemtokenizer(text):
     del tokens
     return stems
 
-punctuation_to_strip = '"#%&\'();:*+-/<=>@[\\]^_`{|}~'
+punctuation_to_strip = u'"#%&\'();:*+-/<=>@[\\]^_`{|}~'
+punctuation_to_strip += u'\u2018\u2019\u201c\u201d' # additional punctuation not in string.punctuation
+# \u2018 => ‘ \u2019 => ’ \u201c => “ \u201d => ”
 def sentence_wordtokenizer(text):
     """
     Improved function for tokenization, stripping only specific punctuation and preserving the punctuation
@@ -71,8 +75,8 @@ def sentence_wordtokenizer(text):
             elif is_chemical_new(stem):
                 token_stems = [CHEMICAL_INDICATOR]
             else:
-                stem = stem.strip(punctuation_to_strip)
                 token_stems = list(re.findall(r"^([.,!?;:]*)(.+?)([.,!?;:]?)$", stem)[0])
+                token_stems = [t.strip(punctuation_to_strip) for t in token_stems]
                 if len(token_stems):
                     if token_stems[1] in abbrev_types_set:
                         token_stems[1] = token_stems[1] + token_stems[2]
@@ -110,11 +114,21 @@ def min_sentence_length_enforcer(sentences):
     # initialize with '' so we dont have to add a condition to be evaluated in the loop
     new_sentences = ['']
     for sent in sentences:
-        if len(sent) < MIN_SENT_LENGTH or is_table_row(sent):
-            new_sentences[-1] += ' ' + sent
-        else:
-            new_sentences.append(sent)
-    if len(new_sentences[0]) == 0: new_sentences = new_sentences[1:]
+        sent = sent.strip()
+        if len(sent) > 0:
+            if len(sent) < MIN_SENT_LENGTH or is_table_row(sent):
+                new_sentences[-1] += ' ' + sent
+            else:
+                new_sentences.append(sent)
+
+    # handling of special cases where the first sentence is either kept as '' or is something like '1. '
+    if len(new_sentences[0]) == 0:
+        # takes care of the case where there are no sentences other than ''=> new_sentences = [] and
+        # when there are => new_sentences = new_sentences[1:]
+        new_sentences = new_sentences[1:]
+    elif len(new_sentences[0]) < MIN_SENT_LENGTH and len(new_sentences) > 1:
+        new_sentences[1] = new_sentences[0] + ' ' + new_sentences[1]
+        new_sentences = new_sentences[1:]
     return new_sentences
 
 def get_sentences(text):

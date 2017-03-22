@@ -12,6 +12,9 @@ Utils for calculating metrics
 get_binary = lambda x: 1 if x > 0 else 0
 get_binary = np.vectorize(get_binary)
 
+get_binary_0_5 = lambda x: 1 if x > 0.5 else 0
+get_binary_0_5 = np.vectorize(get_binary_0_5)
+
 
 def get_top_N_percentage(y_score, y_true, max_N=3):
     """
