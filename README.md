@@ -4,6 +4,10 @@
 
 	sudo apt-get install build-essential gfortran libatlas-base-dev libfreetype6-dev
 	
+This is also needed for Ubuntu 16.04:
+
+    sudo apt-get install libxft-dev
+    
 #### For the General Requirements:
 
 Then:
@@ -16,7 +20,12 @@ Then add those two lines there:
 	export WORKON_HOME=$HOME/.virtualenv
 	source /usr/local/bin/virtualenvwrapper.sh
 
-Or if you get Permission denied errors:
+or depending on the location on the script:
+
+    source /home/stud/shalaby/.local/bin/virtualenvwrapper.sh
+	
+
+If you get Permission denied errors:
 
 	pip install --user virtualenv virtualenvwrapper
 
@@ -53,6 +62,7 @@ Then go into a python console, then:
 	import nltk
 	nltk.download("wordnet")
 	nltk.download("stopwords")
+	nltk.download('punkt')
 	
 #### For Spark
 
@@ -292,3 +302,18 @@ Then use FoxyProxy add-on for firefox to use this socks proxy to access GUI webs
 ### For making virtual envs for a spcific python version
 
     mkvirtualenv thesis-env2 -p /usr/bin/python2.7
+
+### If you get a prompt in jupyter about a password
+
+Generate the config if it's not already there
+
+    jupyter notebook --generate-config
+
+Then go into the config file:
+
+    vim ~/.jupyter/jupyter_notebook_config.py
+Look for the key `c.NotebookApp.token`, uncomment it and change it to:
+
+    c.NotebookApp.token = ''
+    
+Then save and restart
