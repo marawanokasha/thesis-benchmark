@@ -1,3 +1,5 @@
+virtualenvwrapper
+
 nltk == 3.2
 numpy == 1.12.1
 scipy == 0.18.1
